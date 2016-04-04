@@ -27,7 +27,7 @@ ncdfToSumerizationByQM = function(ncdf, outDirectory, model, interval, brack){
 
     ##needed libraries
     require(raster)
-    require(ntcdf4)
+    require(ncdf4)
     
     ##runs though each variable
     for(vn in 1:ncdf$nvars){
@@ -137,7 +137,7 @@ ncdfToSumerizationByQM = function(ncdf, outDirectory, model, interval, brack){
                 modOutDir = paste(outDirectory, as.character(BPstart), "_", as.character(BPend), "/", sep="")
                 
                 ##creates output directory if it does not already exist
-                dir.create(modOutDir, showWarnings=FALSE)
+                dir.create(modOutDir, recursive=TRUE, showWarnings=FALSE)
                 
                 ##writes out pertinent rasters
                 if(varName!="tmax"){
@@ -474,20 +474,20 @@ library(raster)
 
 # SETUP DIRECTORIES AND FILES ---------------------------------------------
 
-climMods <- c("ACCESS1-3", "CanESM2", "CESM1-CAM5", "CNRM-CM5", "CSIRO-Mk3-6-0", "GFDL-CM3", "GISS-E2-R", "HadGEM2-ES", "inmcm4", "IPSL-CM5A-MR", "MIROC5", "MRI-CGCM3")
+climMods <- c("CCSM", "ECBilt")
 
 ## Define directories
-inDir = "M:/ClimateData/paleo/UofWiscData/"
-outDir = "M:/paleoCLMs/data/derived/extractedClimate/"
+inDir = "/home/diego/Datos/Proyectos/00-PaleoCLM/Data/Climate/Climate-NetCDF"
+outDir = "/home/diego/Datos/Proyectos/00-PaleoCLM/08-NatureData-ClimateData/R-project/Data-v2"
 
 ## Lists the desired .nc files to extract data from, some of the primary climate variables were not used
 netCDFlist = list.files(inDir, pattern=".nc", recursive=T, full.names=T)
-etCDFlist = netCDFlist[grep("ET.nc|gdd.nc|prcp.nc|temp.nc", netCDFlist)]
+netCDFlist = netCDFlist[grep("ET.nc|gdd.nc|prcp.nc|temp.nc", netCDFlist)]
 
 ## Sets up output locations, based on using subdirectories of both inDir and outDir, all named the same
 ## Copied to have the same length as netCDF files
 scenerioList = sapply(strsplit(netCDFlist, "/"), function(x, y){x[[which(x %in% y)]]}, climMods)
-outDirList = lapply(scenerioList, function(scen){paste(outDir, scen, "/", sep="")})
+outDirList = lapply(scenerioList, function(scen){paste(outDir, "/", scen, "/", sep="")})
 
 
 # RUN FUNCTIONS -----------------------------------------------------------
@@ -518,7 +518,7 @@ createWDEI(netCDFlist[5], netCDFlist[8], outDirList[5], scenerioList[5], interva
 # CHANGE FOLDER NAMES -----------------------------------------------------
 
 # CCSM
-dir <- paste(outDir, "CCSM", sep="")
+dir <- paste(outDir, "/CCSM", sep="")
 period <- seq(0, 22000, by=500)
 
 yStart <- seq(10, -2190, by=-50)
@@ -534,7 +534,7 @@ mapply(file.rename, oldNames, newNames)
 
 
 # ECBilt
-dir <- paste(outDir, "ECBilt", sep="")
+dir <- paste(outDir, "/ECBilt", sep="")
 
 period <- seq(0, 21000, by=500)
 
@@ -545,10 +545,7 @@ yEnd <- seq(-10, -2110, -50)
 yEnd[43] <- -2100
 
 oldNames <- paste(dir, "/", yStart, "_", yEnd, sep="")
-oldNames
-
 newNames <- paste(dir, "/", period, "BP", sep="")
-newNames
 
 mapply(file.rename, oldNames, newNames)
 
