@@ -1,7 +1,7 @@
 
 # FUNCTIONS ---------------------------------------------------------------
 
-ncdfToSumerizationByQM = function(ncdf, outDirectory, model, interval, brack){
+ncdfToSumerizationByQM = function(ncdf, outDirectory, model, interval=NULL, yearSeq=NULL, brack){
     ## Function to convert all of the variables in the given netCDF4 file into 
     ## a series of rasters, summerized month and quarter data by 200 years at 500
     ## year intervals
@@ -11,7 +11,9 @@ ncdfToSumerizationByQM = function(ncdf, outDirectory, model, interval, brack){
     ## outDirectory = where to write the rasters 
     ## model = character string of which climate model being used
     ## interval = negative integer, the number of decades to set up the year sequence, ex: -50 = 500 years
-    ## brack = possitive integer, the number of decade to bracket the each interval year by for the summarization
+    ## yearSeq = argument by which the user may specify the years to be extracted, while this uses the same
+    ##          numeric scale as the interval argument, this argument will superceed the interval argument if provided
+    ## brack = possitive integer, the number of decade to bracket the each interval year by for the summarization  
     ##
     ## Output Variables:
     ## None, rasters written to disk
@@ -22,6 +24,7 @@ ncdfToSumerizationByQM = function(ncdf, outDirectory, model, interval, brack){
     # outDirectory = outDirList[[1]]
     # model = scenerioList[1]
     # interval = -50
+    # yearsSeq = c(-50, -100, -150, -275)
     # brack = 10
     ################################
 
@@ -42,20 +45,29 @@ ncdfToSumerizationByQM = function(ncdf, outDirectory, model, interval, brack){
         longVals = var$dim[[1]]$vals
         latVals = var$dim[[2]]$vals
         
-        ##sets up 500 year intervals 
+        ##changes year index values if the model in ECBilt
         if(model=="ECBilt"){
-            years = years + 100
-            yearSeq = seq(from=0, to=-length(years), by=interval)
-        }else{
-            yearSeq = seq(from=0, to=-length(years), by=interval)
+          years = years + 100
+        }
+        
+        ##sets up year intervals, if not provided 
+        if(is.null(yearSeq)==T){
+          yearSeq = seq(from=0, to=-length(years), by=interval)
         }
         
         ##extracts data, 200 years at a time, 100 years around each interval
         for(i in 1:length(yearSeq)){
             ##sets year for extraction
-            endYearClose = yearSeq[i]+brack
-            endYearFar = yearSeq[i]-brack
-            
+            endBrackClose <- brack-1
+            endBrackFar <- brack
+          
+            farIndex <- which(years==yearSeq[i])-endBrackFar
+            if(farIndex<0){
+              farIndex <- 1
+            }
+            endYearClose = yearSeq[i]+endBrackClose
+            endYearFar = years[farIndex]
+          
             ##creates empty lists, to be filled below
             quartMinList = list()
             quartMaxList = list()
@@ -174,7 +186,7 @@ ncdfToSumerizationByQM = function(ncdf, outDirectory, model, interval, brack){
     }
 }
 
-createETR = function(ncdf, outDirectory, model, interval, brack){
+createETR = function(ncdf, outDirectory, model, interval=NULL, yearSeq=NULL, brack){
     ## A function to calculate the etr from the available aet and pet data
     ## located in a netCDF file, uses much of the same code as ncdfToSumerizationByQM
     ## 
@@ -183,6 +195,8 @@ createETR = function(ncdf, outDirectory, model, interval, brack){
     ## outDirectory = where to write the rasters 
     ## model = character string of which climate model being used
     ## interval = negative integer, the number of decades to set up the year sequence, ex: -50 = 500 years
+    ## yearSeq = argument by which the user may specify the years to be extracted, while this uses the same
+    ##          numeric scale as the interval argument, this argument will superceed the interval argument if provided 
     ## brack = possitive integer, the number of decade to bracket the each interval year by for the summarization
     ##
     ## Output Variables:
@@ -194,6 +208,7 @@ createETR = function(ncdf, outDirectory, model, interval, brack){
     # outDirectory = outETDir[[2]]
     # model = etScenList[2]
     # interval = -50
+    # yearsSeq = c(-50, -100, -150, -275)
     # brack = 10
     ################################
     
@@ -211,20 +226,29 @@ createETR = function(ncdf, outDirectory, model, interval, brack){
     longVals = petVar$dim[[1]]$vals
     latVals = petVar$dim[[2]]$vals
     
-    ##sets up 500 year intervals 
+    ##changes year index values if the model in ECBilt
     if(model=="ECBilt"){
-        years = years + 100
-        yearSeq = seq(from=0, to=-length(years), by=interval)
-    }else{
-        yearSeq = seq(from=0, to=-length(years), by=interval)
+      years = years + 100
+    }
+    
+    ##sets up year intervals, if not provided 
+    if(is.null(yearSeq)==T){
+      yearSeq = seq(from=0, to=-length(years), by=interval)
     }
     
     ##extracts data, 200 years at a time, 100 years around each interval
     for(i in 1:length(yearSeq)){
         ##sets year for extraction
-        endYearClose = yearSeq[i]+brack
-        endYearFar = yearSeq[i]-brack
-        
+        endBrackClose <- brack-1
+        endBrackFar <- brack
+      
+        farIndex <- which(years==yearSeq[i])-endBrackFar
+        if(farIndex<0){
+          farIndex <- 1
+        }
+        endYearClose = yearSeq[i]+endBrackClose
+        endYearFar = years[farIndex]
+      
         ##creates empty lists, to be filled below
         quartMinList = list()
         quartMaxList = list()
@@ -232,7 +256,6 @@ createETR = function(ncdf, outDirectory, model, interval, brack){
         monthMaxList = list()
         yrList = list()
         varYrList = list()
-
         ##gets BP year values
         BP = which(years >= endYearFar & years <= endYearClose)
 
@@ -312,7 +335,7 @@ createETR = function(ncdf, outDirectory, model, interval, brack){
     }  
 }
 
-createWDEI = function(etncdf, precipncdf, outDirectory, model, interval, brack){
+createWDEI = function(etncdf, precipncdf, outDirectory, model, interval=NULL, yearSeq=NULL, brack){
     ## A function to calculate the wdei from the available precip and pet data
     ## located in a netCDF file, uses much of the same code as ncdfToSumerizationByQM
     ##
@@ -321,6 +344,8 @@ createWDEI = function(etncdf, precipncdf, outDirectory, model, interval, brack){
     ## outDirectory = where to write the rasters 
     ## model = character string of which climate model being used
     ## interval = negative integer, the number of decades to set up the year sequence, ex: -50 = 500 years
+    ## yearSeq = argument by which the user may specify the years to be extracted, while this uses the same
+    ##          numeric scale as the interval argument, this argument will superceed the interval argument if provided
     ## brack = possitive integer, the number of decade to bracket the each interval year by for the summarization
     ##
     ## Output Variables:
@@ -333,6 +358,7 @@ createWDEI = function(etncdf, precipncdf, outDirectory, model, interval, brack){
     # tempDirectory = tempDir
     # model = scenerioList[1]
     # interval = -50
+    # yearsSeq = c(-50, -100, -150, -275)
     # brack = 10
     ################################
 
@@ -360,20 +386,29 @@ createWDEI = function(etncdf, precipncdf, outDirectory, model, interval, brack){
     longVals = petVar$dim[[1]]$vals
     latVals = petVar$dim[[2]]$vals
     
-    ##sets up 500 year intervals 
+    ##changes year index values if the model in ECBilt
     if(model=="ECBilt"){
-        years = years + 100
-        yearSeq = seq(from=0, to=-length(years), by=interval)
-    }else{
-        yearSeq = seq(from=0, to=-length(years), by=interval)
+      years = years + 100
+    }
+    
+    ##sets up year intervals, if not provided 
+    if(is.null(yearSeq)==T){
+      yearSeq = seq(from=0, to=-length(years), by=interval)
     }
     
     ##extracts data, 200 years at a time, 100 years around each interval
     for(i in 1:length(yearSeq)){
         ##sets year for extraction
-        endYearClose = yearSeq[i]+brack
-        endYearFar = yearSeq[i]-brack
-        
+        endBrackClose <- brack-1
+        endBrackFar <- brack
+      
+        farIndex <- which(years==yearSeq[i])-endBrackFar
+        if(farIndex<0){
+          farIndex <- 1
+        }
+        endYearClose = yearSeq[i]+endBrackClose
+        endYearFar = years[farIndex]
+      
         ##creates empty lists, to be filled below
         quartMinList = list()
         quartMaxList = list()
@@ -381,7 +416,6 @@ createWDEI = function(etncdf, precipncdf, outDirectory, model, interval, brack){
         monthMaxList = list()
         yrList = list()
         varYrList = list()
-        
         ##gets BP year values
         BP = which(years >= endYearFar & years <= endYearClose)
         
